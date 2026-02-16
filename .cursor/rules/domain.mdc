@@ -1,0 +1,46 @@
+---
+description: Rules for the domain layer — entities, enums, repository interfaces, and errors.
+globs: src/domain/**
+---
+
+# Domain Layer Rules
+
+Reference: `docs/entities.md`, `docs/architecture.md`
+
+## Zero External Dependencies
+
+The domain layer must **NOT** import from any other layer or any external library. It contains only pure TypeScript:
+
+- Entity interfaces
+- Enums
+- Repository interfaces
+- The `AppError` class
+
+## Entities
+
+- Defined as TypeScript `interface` in `src/domain/entities/`.
+- Every entity includes common audit fields: `id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`.
+- See `docs/entities.md` for the full specification of each entity.
+
+## Enums
+
+- `Priority` enum in `src/domain/enums/Priority.ts` with values: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`.
+
+## Repository Interfaces
+
+- Located in `src/domain/repositories/`.
+- Named `I{Entity}Repository.ts`.
+- Define abstract data access methods: `findById`, `findAll`, `create`, `update`, `softDelete`.
+- Must NOT reference Knex, SQL, or any infrastructure detail.
+
+## Errors
+
+- `AppError` in `src/domain/errors/AppError.ts`.
+- Constructor: `new AppError(message: string, statusCode: number)`.
+- Used by use cases to signal expected business errors (not found, conflict, forbidden, etc.).
+
+## What Does NOT Belong Here
+
+- No HTTP concepts (req, res, status codes in entities).
+- No database queries or Knex references.
+- No framework-specific code (Express, JWT, bcrypt).

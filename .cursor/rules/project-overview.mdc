@@ -1,0 +1,44 @@
+---
+description: Global project context — always active. Points to docs/ as Single Source of Truth.
+globs:
+alwaysApply: true
+---
+
+# YASTM — Project Overview
+
+YASTM (Yet Another Simple Task Manager) is a RESTful Task Manager API.
+
+## Stack
+
+- **Runtime**: Node.js with TypeScript (strict mode)
+- **HTTP Framework**: Express
+- **Database**: PostgreSQL via Knex.js (query builder)
+- **Auth**: JWT (jsonwebtoken) + bcrypt for password hashing
+- **Validation**: Zod
+- **Testing**: Jest + supertest
+
+## Architecture
+
+Clean Architecture with four layers: Domain → Application → Infrastructure → Presentation.
+Dependencies point inward only. See `docs/architecture.md` for full details.
+
+## Principles
+
+- **SOLID** — especially Dependency Inversion (use cases depend on interfaces, not implementations)
+- **YAGNI** — don't build what isn't needed yet
+- **KISS** — prefer simple solutions over clever abstractions
+- **DRY** — share logic via utilities or base classes, never copy-paste
+
+## Single Source of Truth
+
+All project specifications live in the `docs/` folder. **Always consult the relevant doc before making changes:**
+
+- `docs/architecture.md` — Layer responsibilities and dependency rules
+- `docs/database-schema.md` — Table definitions, relationships, migration order
+- `docs/api-endpoints.md` — Every REST endpoint with request/response formats
+- `docs/entities.md` — Domain entities, attributes, and business rules
+- `docs/authentication.md` — JWT flow, middleware, provider interfaces
+- `docs/project-structure.md` — Directory layout and file naming conventions
+- `docs/conventions.md` — Coding standards, naming, error handling, response format
+
+When implementation diverges from documentation, **update the docs first**.

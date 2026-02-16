@@ -1,0 +1,54 @@
+---
+description: Testing conventions and patterns for unit and integration tests.
+globs: tests/**
+---
+
+# Testing Conventions
+
+Reference: `docs/conventions.md`
+
+## Structure
+
+- `tests/unit/` — Unit tests for use cases (mock all dependencies)
+- `tests/integration/` — Integration tests for API endpoints (use supertest)
+
+## Naming
+
+- Test files: `{OriginalFileName}.test.ts`
+- Example: `CreateTaskUseCase.test.ts`, `taskRoutes.test.ts`
+
+## Unit Tests (Use Cases)
+
+- Mock all repository and provider dependencies.
+- Test the use case logic in isolation.
+- Verify correct method calls on mocks.
+- Test both success paths and error paths (AppError thrown).
+
+```typescript
+// Pattern
+describe('CreateTaskUseCase', () => {
+  it('should create a task successfully', async () => {
+    // Arrange: set up mocks and input
+    // Act: call useCase.execute(input)
+    // Assert: verify output and mock calls
+  });
+
+  it('should throw AppError when assignor not found', async () => {
+    // Arrange, Act, Assert
+  });
+});
+```
+
+## Integration Tests (API Endpoints)
+
+- Use `supertest` with the Express app.
+- Test the full request/response cycle.
+- Set up and tear down test data as needed.
+- Verify HTTP status codes, response body structure, and side effects.
+
+## General
+
+- Use `describe` / `it` blocks with descriptive names.
+- Follow **Arrange-Act-Assert** pattern.
+- Keep tests independent — no test should depend on another's state.
+- Use Jest's `beforeEach` / `afterEach` for setup/teardown.

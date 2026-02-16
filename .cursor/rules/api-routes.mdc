@@ -1,0 +1,49 @@
+---
+description: Conventions for Express routes, controllers, validators, and middlewares.
+globs: src/presentation/**
+---
+
+# Presentation Layer Conventions
+
+Reference: `docs/api-endpoints.md`, `docs/authentication.md`, `docs/conventions.md`
+
+## Routes
+
+- Base path: `/api`
+- Route files are in `src/presentation/routes/` and named `{entity}Routes.ts`.
+- Each route file exports an Express `Router`.
+- Routes are mounted in `src/app.ts`.
+
+## Controllers
+
+- Located in `src/presentation/controllers/`, named `{Entity}Controller.ts`.
+- Controllers are **thin**: extract validated input, call a use case, return the response.
+- No business logic in controllers.
+- Controllers receive use cases via constructor injection.
+
+## Validators (Zod)
+
+- Located in `src/presentation/validators/`, named `{entity}Validators.ts`.
+- Each file exports Zod schemas for the entity's routes.
+- The `validateRequest` middleware applies these schemas to `req.body`, `req.params`, and/or `req.query`.
+
+## Middlewares
+
+- `authMiddleware` — Verifies JWT, attaches `req.user`. Applied to all routes except auth.
+- `validateRequest` — Parses request against a Zod schema, returns 400 on failure.
+- `errorHandler` — Global error catcher. Converts `AppError` to structured JSON response.
+
+## Response Format
+
+All responses use this envelope:
+
+```json
+// Success
+{ "success": true, "data": { ... } }
+
+// Error
+{ "success": false, "error": { "message": "...", "statusCode": 400 } }
+```
+
+- 201 for creation, 204 for deletion (no body), 200 for reads/updates.
+- 400 validation, 401 unauthenticated, 403 unauthorized, 404 not found, 409 conflict.

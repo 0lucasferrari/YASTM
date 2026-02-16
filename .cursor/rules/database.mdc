@@ -1,0 +1,44 @@
+---
+description: Database conventions for migrations, queries, and schema changes.
+globs: src/infrastructure/database/**
+---
+
+# Database Conventions
+
+Reference: `docs/database-schema.md`
+
+## General Rules
+
+- **PostgreSQL** is the database. Use PostgreSQL-specific features (e.g. `uuid`, `timestamptz`, custom enum types).
+- **Knex.js** is the query builder — never write raw SQL unless Knex cannot express the query.
+- All primary keys are **UUIDs** generated application-side (using the `uuid` package).
+- All timestamps use `timestamptz` (timestamp with time zone).
+
+## Audit Columns
+
+Every entity table must include:
+
+```
+created_at  timestamptz  NOT NULL DEFAULT now()
+created_by  uuid         FK → users(id), nullable
+updated_at  timestamptz  NOT NULL DEFAULT now()
+updated_by  uuid         FK → users(id), nullable
+deleted_at  timestamptz  nullable
+deleted_by  uuid         FK → users(id), nullable
+```
+
+## Soft Deletes
+
+- Never use SQL `DELETE`. Always set `deleted_at = now()` and `deleted_by = userId`.
+- All queries must filter `WHERE deleted_at IS NULL` unless explicitly querying deleted records.
+
+## Migrations
+
+- File naming: `{timestamp}_{description}.ts` (e.g. `20260216120000_create_users.ts`)
+- Each migration must have both `up()` and `down()` functions.
+- Respect foreign key dependency order (see `docs/database-schema.md` → Migration Order).
+- The `task_priority` PostgreSQL enum must be created before the `tasks` table.
+
+## Junction Tables
+
+Junction tables (`task_assignees`, `task_statuses`, `task_labels`) use composite primary keys. They do NOT have audit columns.

@@ -1,0 +1,33 @@
+---
+description: Enforces clean architecture layer boundaries when editing source code.
+globs: src/**
+---
+
+# Architecture Rules
+
+Reference: `docs/architecture.md`
+
+## Layer Boundaries
+
+You are editing code inside `src/`. Respect these import rules:
+
+| Layer              | Directory                    | Can Import From       | Cannot Import From                  |
+|--------------------|------------------------------|-----------------------|-------------------------------------|
+| Domain             | `src/domain/`                | Nothing external      | Application, Infrastructure, Presentation |
+| Application        | `src/application/`           | Domain only           | Infrastructure, Presentation        |
+| Infrastructure     | `src/infrastructure/`        | Domain only           | Application, Presentation           |
+| Presentation       | `src/presentation/`          | Application, Infra*   | Domain directly                     |
+
+*Presentation accesses Infrastructure only through the composition root (`src/shared/container.ts`).
+
+## Key Patterns
+
+- **Use cases** are single-purpose classes implementing `IUseCase<TInput, TOutput>`.
+- **Repositories** are injected via constructor (Dependency Inversion).
+- **Controllers** are thin — they call a use case and return the result.
+- **No business logic** in controllers, routes, or repositories.
+- **AppError** is the only error class for expected errors (thrown from use cases).
+
+## Composition Root
+
+All dependency wiring happens in `src/shared/container.ts`. This is the only file that imports concrete implementations alongside interfaces.
