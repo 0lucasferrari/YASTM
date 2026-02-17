@@ -6,6 +6,7 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(3000),
+  DB_CLIENT: z.enum(['pg', 'mysql2']).default('pg'),
   DATABASE_URL: z.url(),
   DATABASE_URL_TEST: z.url().optional(),
   JWT_SECRET: z.string().min(1),

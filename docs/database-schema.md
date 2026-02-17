@@ -1,13 +1,13 @@
 # Database Schema
 
-YASTM uses **PostgreSQL** with **Knex.js** as the query builder. All schema changes are managed through Knex migrations.
+YASTM supports **PostgreSQL** and **MySQL 8** via **Knex.js** as the query builder. The database driver is selected through the `DB_CLIENT` environment variable (`pg` or `mysql2`). All schema changes are managed through Knex migrations that are dialect-aware.
 
 ## General Conventions
 
 - All primary keys are **UUIDs** (generated application-side using the `uuid` package).
 - All entity tables include **audit columns**: `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`.
 - **Soft deletes**: Records are never physically removed. Instead, `deleted_at` is set to the current timestamp and `deleted_by` to the user who performed the deletion. All repository queries must filter `WHERE deleted_at IS NULL` by default.
-- Timestamps use `timestamp with time zone` (PostgreSQL `timestamptz`).
+- Timestamps use `timestamp with time zone` (`timestamptz` on PostgreSQL, `timestamp` on MySQL).
 - Foreign keys referencing users (audit columns) do not have cascade deletes — they preserve the audit trail.
 
 ## ER Diagram
@@ -29,11 +29,13 @@ comments }o--|| users        : "creator (creator_id)"
 
 ## Priority Enum
 
-A PostgreSQL enum type named `task_priority`:
+**PostgreSQL:** A custom enum type named `task_priority`:
 
 ```sql
 CREATE TYPE task_priority AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
 ```
+
+**MySQL 8:** Uses an inline `ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')` column definition on the `tasks` table. No separate type is needed.
 
 ## Table Definitions
 

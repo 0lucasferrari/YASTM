@@ -8,7 +8,14 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('parent_task_id').nullable().references('id').inTable('tasks');
     table.uuid('assignor_id').notNullable().references('id').inTable('users');
     table.uuid('current_status_id').nullable().references('id').inTable('statuses');
-    table.specificType('priority', 'task_priority').nullable();
+
+    const client = knex.client.config.client;
+    if (client === 'pg') {
+      table.specificType('priority', 'task_priority').nullable();
+    } else {
+      table.enum('priority', ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).nullable();
+    }
+
     table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
     table.uuid('created_by').nullable().references('id').inTable('users');
     table.timestamp('updated_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());

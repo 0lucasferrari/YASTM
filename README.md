@@ -8,7 +8,7 @@
 
 - **Runtime:** Node.js + TypeScript (strict mode)
 - **Framework:** Express 5
-- **Database:** PostgreSQL via Knex.js
+- **Database:** PostgreSQL or MySQL 8 via Knex.js (configurable)
 - **Auth:** JWT + bcrypt
 - **Validation:** Zod
 - **Testing:** Jest + supertest
@@ -37,7 +37,9 @@
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
-- [PostgreSQL](https://www.postgresql.org/) 14+
+- **One of the following databases:**
+  - [PostgreSQL](https://www.postgresql.org/) 14+ *(default)*
+  - [MySQL](https://www.mysql.com/) 8+
 - npm (ships with Node.js)
 
 ## Getting Started
@@ -72,36 +74,54 @@ Copy the example file and fill in your values:
 cp .env.example .env
 ```
 
-Edit `.env` with your PostgreSQL credentials:
+Edit `.env` with your database credentials:
+
+**PostgreSQL** (default):
 
 ```env
 NODE_ENV=development
 PORT=3000
+DB_CLIENT=pg
 DATABASE_URL=postgresql://user:password@localhost:5432/yastm
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRES_IN=24h
 BCRYPT_SALT_ROUNDS=10
 ```
 
-| Variable             | Description                                      | Default     |
-|----------------------|--------------------------------------------------|-------------|
-| `NODE_ENV`           | Environment mode (`development` / `production`)  | —           |
-| `PORT`               | Port for the API server                          | `3000`      |
-| `DATABASE_URL`       | PostgreSQL connection string                     | —           |
-| `JWT_SECRET`         | Secret key for signing JWT tokens                | —           |
-| `JWT_EXPIRES_IN`     | Token expiration (e.g. `24h`, `7d`)              | `24h`       |
-| `BCRYPT_SALT_ROUNDS` | Number of bcrypt hashing rounds                  | `10`        |
+**MySQL 8:**
+
+```env
+NODE_ENV=development
+PORT=3000
+DB_CLIENT=mysql2
+DATABASE_URL=mysql://user:password@localhost:3306/yastm
+JWT_SECRET=your-secret-key-change-in-production
+JWT_EXPIRES_IN=24h
+BCRYPT_SALT_ROUNDS=10
+```
+
+| Variable             | Description                                       | Default     |
+|----------------------|---------------------------------------------------|-------------|
+| `NODE_ENV`           | Environment mode (`development` / `production`)   | —           |
+| `PORT`               | Port for the API server                           | `3000`      |
+| `DB_CLIENT`          | Database driver (`pg` or `mysql2`)                | `pg`        |
+| `DATABASE_URL`       | Database connection string                        | —           |
+| `JWT_SECRET`         | Secret key for signing JWT tokens                 | —           |
+| `JWT_EXPIRES_IN`     | Token expiration (e.g. `24h`, `7d`)               | `24h`       |
+| `BCRYPT_SALT_ROUNDS` | Number of bcrypt hashing rounds                   | `10`        |
 
 ### 4. Create the database
+
+**PostgreSQL:**
 
 ```bash
 createdb yastm
 ```
 
-Or via `psql`:
+**MySQL:**
 
 ```sql
-CREATE DATABASE yastm;
+CREATE DATABASE yastm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ### 5. Run migrations

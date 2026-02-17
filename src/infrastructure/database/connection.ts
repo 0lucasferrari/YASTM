@@ -2,7 +2,7 @@ import knex from 'knex';
 import { env } from '../../shared/config/env';
 
 const connection = knex({
-  client: 'pg',
+  client: env.DB_CLIENT,
   connection: env.NODE_ENV === 'test'
     ? (env.DATABASE_URL_TEST || env.DATABASE_URL)
     : env.DATABASE_URL,

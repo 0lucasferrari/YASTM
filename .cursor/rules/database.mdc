@@ -9,21 +9,22 @@ Reference: `docs/database-schema.md`
 
 ## General Rules
 
-- **PostgreSQL** is the database. Use PostgreSQL-specific features (e.g. `uuid`, `timestamptz`, custom enum types).
+- **PostgreSQL** and **MySQL 8** are both supported. The driver is set via the `DB_CLIENT` env variable (`pg` or `mysql2`).
 - **Knex.js** is the query builder — never write raw SQL unless Knex cannot express the query.
 - All primary keys are **UUIDs** generated application-side (using the `uuid` package).
-- All timestamps use `timestamptz` (timestamp with time zone).
+- All timestamps use `table.timestamp(name, { useTz: true })` (Knex generates `timestamptz` for PG, `timestamp` for MySQL).
+- **Never use database-specific features** without a dialect check (`knex.client.config.client`).
 
 ## Audit Columns
 
 Every entity table must include:
 
 ```
-created_at  timestamptz  NOT NULL DEFAULT now()
+created_at  timestamp    NOT NULL DEFAULT now()
 created_by  uuid         FK → users(id), nullable
-updated_at  timestamptz  NOT NULL DEFAULT now()
+updated_at  timestamp    NOT NULL DEFAULT now()
 updated_by  uuid         FK → users(id), nullable
-deleted_at  timestamptz  nullable
+deleted_at  timestamp    nullable
 deleted_by  uuid         FK → users(id), nullable
 ```
 
@@ -37,7 +38,19 @@ deleted_by  uuid         FK → users(id), nullable
 - File naming: `{timestamp}_{description}.ts` (e.g. `20260216120000_create_users.ts`)
 - Each migration must have both `up()` and `down()` functions.
 - Respect foreign key dependency order (see `docs/database-schema.md` → Migration Order).
-- The `task_priority` PostgreSQL enum must be created before the `tasks` table.
+- The `task_priority` enum is dialect-aware:
+  - **PostgreSQL:** Uses a custom `CREATE TYPE task_priority AS ENUM (...)`.
+  - **MySQL 8:** Uses an inline `table.enum()` column definition (no separate type).
+- When a migration needs dialect-specific logic, use `knex.client.config.client` to branch:
+
+```typescript
+const client = knex.client.config.client;
+if (client === 'pg') {
+  // PostgreSQL-specific code
+} else {
+  // MySQL-specific code
+}
+```
 
 ## Junction Tables
 

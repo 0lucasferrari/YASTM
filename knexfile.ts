@@ -3,9 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const dbClient = process.env.DB_CLIENT || 'pg';
+
 const config: Record<string, Knex.Config> = {
   development: {
-    client: 'pg',
+    client: dbClient,
     connection: process.env.DATABASE_URL,
     migrations: {
       directory: './src/infrastructure/database/migrations',
@@ -17,7 +19,7 @@ const config: Record<string, Knex.Config> = {
     },
   },
   test: {
-    client: 'pg',
+    client: dbClient,
     connection: process.env.DATABASE_URL_TEST || process.env.DATABASE_URL,
     migrations: {
       directory: './src/infrastructure/database/migrations',
@@ -29,7 +31,7 @@ const config: Record<string, Knex.Config> = {
     },
   },
   production: {
-    client: 'pg',
+    client: dbClient,
     connection: process.env.DATABASE_URL,
     migrations: {
       directory: './dist/infrastructure/database/migrations',
@@ -45,4 +47,3 @@ const config: Record<string, Knex.Config> = {
 };
 
 export default config;
-
