@@ -12,6 +12,12 @@ export class GetTaskUseCase implements IUseCase<string, TaskOutputDTO> {
       throw new AppError('Task not found', 404);
     }
 
+    const [possibleStatusIds, assigneeIds, labelIds] = await Promise.all([
+      this.taskRepository.getStatuses(id),
+      this.taskRepository.getAssignees(id),
+      this.taskRepository.getLabels(id),
+    ]);
+
     return {
       id: task.id,
       title: task.title,
@@ -20,9 +26,12 @@ export class GetTaskUseCase implements IUseCase<string, TaskOutputDTO> {
       assignor_id: task.assignor_id,
       current_status_id: task.current_status_id,
       priority: task.priority,
+      predicted_finish_date: task.predicted_finish_date,
       created_at: task.created_at,
       updated_at: task.updated_at,
+      possible_status_ids: possibleStatusIds,
+      assignee_ids: assigneeIds,
+      label_ids: labelIds,
     };
   }
 }
-

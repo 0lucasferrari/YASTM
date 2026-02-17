@@ -56,6 +56,7 @@ The central entity. Represents a unit of work.
 | assignor_id       | string (UUID)     | The user who created/assigned the task  |
 | current_status_id | string (UUID) \| null | The task's current status            |
 | priority          | Priority \| null  | Task priority level                     |
+| predicted_finish_date | Date \| null | Expected completion date (nullable)     |
 
 **Relationships:**
 - **Assignor**: One user (required). The person who created the task.
@@ -116,6 +117,47 @@ A text note attached to a task by a user.
 - Content must be non-empty.
 - A comment belongs to exactly one task and one creator.
 - Only the comment creator (or an admin, if roles are added later) can edit/delete a comment.
+
+## TaskActivityLog
+
+An immutable audit log entry recording a change made to a task. Does **not** include the common audit fields — log entries are never updated or deleted.
+
+| Field      | Type              | Description                                      |
+|------------|-------------------|--------------------------------------------------|
+| id         | string (UUID)     | Unique identifier                                |
+| task_id    | string (UUID)     | The task that was changed                        |
+| user_id    | string (UUID)     | The user who performed the change                |
+| action     | TaskAction        | Type of change (see TaskAction enum below)       |
+| field      | string \| null    | Which field changed (for TASK_UPDATED actions)   |
+| old_value  | string \| null    | Previous value (serialized as text)              |
+| new_value  | string \| null    | New value (serialized as text)                   |
+| created_at | Date              | When the change occurred                         |
+
+**Business Rules:**
+- Log entries are immutable — they are never updated or soft-deleted.
+- One log entry per changed field on update operations.
+- For non-update actions (ASSIGNEE_ADDED, LABEL_REMOVED, etc.), `old_value` / `new_value` carry the relevant entity ID.
+
+## TaskAction Enum
+
+Defined in `src/domain/enums/TaskAction.ts`:
+
+```typescript
+enum TaskAction {
+  TASK_CREATED = 'TASK_CREATED',
+  TASK_UPDATED = 'TASK_UPDATED',
+  TASK_DELETED = 'TASK_DELETED',
+  ASSIGNEE_ADDED = 'ASSIGNEE_ADDED',
+  ASSIGNEE_REMOVED = 'ASSIGNEE_REMOVED',
+  STATUS_ADDED = 'STATUS_ADDED',
+  STATUS_REMOVED = 'STATUS_REMOVED',
+  CURRENT_STATUS_CHANGED = 'CURRENT_STATUS_CHANGED',
+  LABEL_ADDED = 'LABEL_ADDED',
+  LABEL_REMOVED = 'LABEL_REMOVED',
+  TASK_CLONED = 'TASK_CLONED',
+  COMMENT_ADDED = 'COMMENT_ADDED',
+}
+```
 
 ## Priority Enum
 

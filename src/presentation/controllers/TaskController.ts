@@ -7,10 +7,14 @@ import { DeleteTaskUseCase } from '../../application/use-cases/task/DeleteTaskUs
 import { AddAssigneeUseCase } from '../../application/use-cases/task/AddAssigneeUseCase';
 import { RemoveAssigneeUseCase } from '../../application/use-cases/task/RemoveAssigneeUseCase';
 import { AddTaskStatusUseCase } from '../../application/use-cases/task/AddTaskStatusUseCase';
+import { RemoveTaskStatusUseCase } from '../../application/use-cases/task/RemoveTaskStatusUseCase';
 import { SetCurrentStatusUseCase } from '../../application/use-cases/task/SetCurrentStatusUseCase';
 import { AddTaskLabelUseCase } from '../../application/use-cases/task/AddTaskLabelUseCase';
 import { RemoveTaskLabelUseCase } from '../../application/use-cases/task/RemoveTaskLabelUseCase';
+import { CloneTaskUseCase } from '../../application/use-cases/task/CloneTaskUseCase';
 import { CreateCommentUseCase } from '../../application/use-cases/comment/CreateCommentUseCase';
+import { ListCommentsByTaskUseCase } from '../../application/use-cases/comment/ListCommentsByTaskUseCase';
+import { ListTaskActivityLogsUseCase } from '../../application/use-cases/task-activity-log/ListTaskActivityLogsUseCase';
 import { param } from '../helpers/params';
 
 export class TaskController {
@@ -23,10 +27,14 @@ export class TaskController {
     private readonly addAssigneeUseCase: AddAssigneeUseCase,
     private readonly removeAssigneeUseCase: RemoveAssigneeUseCase,
     private readonly addTaskStatusUseCase: AddTaskStatusUseCase,
+    private readonly removeTaskStatusUseCase: RemoveTaskStatusUseCase,
     private readonly setCurrentStatusUseCase: SetCurrentStatusUseCase,
     private readonly addTaskLabelUseCase: AddTaskLabelUseCase,
     private readonly removeTaskLabelUseCase: RemoveTaskLabelUseCase,
+    private readonly cloneTaskUseCase: CloneTaskUseCase,
     private readonly createCommentUseCase: CreateCommentUseCase,
+    private readonly listCommentsByTaskUseCase: ListCommentsByTaskUseCase,
+    private readonly listTaskActivityLogsUseCase: ListTaskActivityLogsUseCase,
   ) {}
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -90,6 +98,7 @@ export class TaskController {
       const result = await this.addAssigneeUseCase.execute({
         task_id: param(req.params.id),
         user_id: req.body.user_id,
+        performed_by: req.user!.id,
       });
       res.status(201).json({ success: true, data: result });
     } catch (error) {
@@ -102,6 +111,7 @@ export class TaskController {
       await this.removeAssigneeUseCase.execute({
         task_id: param(req.params.id),
         user_id: param(req.params.userId),
+        performed_by: req.user!.id,
       });
       res.status(204).send();
     } catch (error) {
@@ -114,8 +124,22 @@ export class TaskController {
       const result = await this.addTaskStatusUseCase.execute({
         task_id: param(req.params.id),
         status_id: req.body.status_id,
+        performed_by: req.user!.id,
       });
       res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  removeStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await this.removeTaskStatusUseCase.execute({
+        task_id: param(req.params.id),
+        status_id: param(req.params.statusId),
+        performed_by: req.user!.id,
+      });
+      res.status(204).send();
     } catch (error) {
       next(error);
     }
@@ -139,6 +163,7 @@ export class TaskController {
       const result = await this.addTaskLabelUseCase.execute({
         task_id: param(req.params.id),
         label_id: req.body.label_id,
+        performed_by: req.user!.id,
       });
       res.status(201).json({ success: true, data: result });
     } catch (error) {
@@ -151,8 +176,22 @@ export class TaskController {
       await this.removeTaskLabelUseCase.execute({
         task_id: param(req.params.id),
         label_id: param(req.params.labelId),
+        performed_by: req.user!.id,
       });
       res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  clone = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.cloneTaskUseCase.execute({
+        source_task_id: param(req.params.id),
+        assignor_id: req.user!.id,
+        created_by: req.user!.id,
+      });
+      res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);
     }
@@ -167,6 +206,37 @@ export class TaskController {
         created_by: req.user!.id,
       });
       res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  listComments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.listCommentsByTaskUseCase.execute(param(req.params.id));
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  listActivityLogs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const limit = parseInt(req.query.limit as string, 10) || 20;
+      const includeSubtasks = req.query.includeSubtasks === 'true';
+      const startDateStr = req.query.startDate as string | undefined;
+      const endDateStr = req.query.endDate as string | undefined;
+
+      const result = await this.listTaskActivityLogsUseCase.execute({
+        task_id: param(req.params.id),
+        page,
+        limit,
+        include_subtasks: includeSubtasks,
+        start_date: startDateStr ? new Date(startDateStr) : undefined,
+        end_date: endDateStr ? new Date(endDateStr) : undefined,
+      });
+      res.status(200).json({ success: true, data: result });
     } catch (error) {
       next(error);
     }

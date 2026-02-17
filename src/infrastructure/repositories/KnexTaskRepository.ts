@@ -27,7 +27,7 @@ export class KnexTaskRepository implements ITaskRepository {
 
   async update(
     id: string,
-    data: Partial<Pick<Task, 'title' | 'description' | 'parent_task_id' | 'current_status_id' | 'priority' | 'updated_by'>>,
+    data: Partial<Pick<Task, 'title' | 'description' | 'parent_task_id' | 'current_status_id' | 'priority' | 'predicted_finish_date' | 'updated_by'>>,
   ): Promise<Task | null> {
     const [updated] = await this.db('tasks')
       .where({ id })
@@ -81,6 +81,11 @@ export class KnexTaskRepository implements ITaskRepository {
       .where({ task_id: taskId })
       .select('status_id');
     return rows.map((row: { status_id: string }) => row.status_id);
+  }
+
+  // Bulk queries (for list enrichment)
+  async findAllAssignees(): Promise<{ task_id: string; user_id: string }[]> {
+    return this.db('task_assignees').select('task_id', 'user_id');
   }
 
   // Label management

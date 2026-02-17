@@ -11,6 +11,7 @@ import { KnexTaskRepository } from '../infrastructure/repositories/KnexTaskRepos
 import { KnexStatusRepository } from '../infrastructure/repositories/KnexStatusRepository';
 import { KnexLabelRepository } from '../infrastructure/repositories/KnexLabelRepository';
 import { KnexCommentRepository } from '../infrastructure/repositories/KnexCommentRepository';
+import { KnexTaskActivityLogRepository } from '../infrastructure/repositories/KnexTaskActivityLogRepository';
 
 // Auth Use Cases
 import { RegisterUseCase } from '../application/use-cases/auth/RegisterUseCase';
@@ -41,6 +42,8 @@ import { AddTaskStatusUseCase } from '../application/use-cases/task/AddTaskStatu
 import { SetCurrentStatusUseCase } from '../application/use-cases/task/SetCurrentStatusUseCase';
 import { AddTaskLabelUseCase } from '../application/use-cases/task/AddTaskLabelUseCase';
 import { RemoveTaskLabelUseCase } from '../application/use-cases/task/RemoveTaskLabelUseCase';
+import { RemoveTaskStatusUseCase } from '../application/use-cases/task/RemoveTaskStatusUseCase';
+import { CloneTaskUseCase } from '../application/use-cases/task/CloneTaskUseCase';
 
 // Status Use Cases
 import { CreateStatusUseCase } from '../application/use-cases/status/CreateStatusUseCase';
@@ -61,6 +64,13 @@ import { CreateCommentUseCase } from '../application/use-cases/comment/CreateCom
 import { GetCommentUseCase } from '../application/use-cases/comment/GetCommentUseCase';
 import { UpdateCommentUseCase } from '../application/use-cases/comment/UpdateCommentUseCase';
 import { DeleteCommentUseCase } from '../application/use-cases/comment/DeleteCommentUseCase';
+import { ListCommentsByTaskUseCase } from '../application/use-cases/comment/ListCommentsByTaskUseCase';
+
+// Report Use Cases
+import { GetTaskReportUseCase } from '../application/use-cases/report/GetTaskReportUseCase';
+
+// Activity Log Use Cases
+import { ListTaskActivityLogsUseCase } from '../application/use-cases/task-activity-log/ListTaskActivityLogsUseCase';
 
 // --- Instantiate Providers ---
 const hashProvider = new BcryptHashProvider();
@@ -73,6 +83,7 @@ const taskRepository = new KnexTaskRepository(connection);
 const statusRepository = new KnexStatusRepository(connection);
 const labelRepository = new KnexLabelRepository(connection);
 const commentRepository = new KnexCommentRepository(connection);
+const taskActivityLogRepository = new KnexTaskActivityLogRepository(connection);
 
 // --- Instantiate Use Cases ---
 
@@ -94,17 +105,19 @@ const updateTeamUseCase = new UpdateTeamUseCase(teamRepository);
 const deleteTeamUseCase = new DeleteTeamUseCase(teamRepository);
 
 // Tasks
-const createTaskUseCase = new CreateTaskUseCase(taskRepository, userRepository);
+const createTaskUseCase = new CreateTaskUseCase(taskRepository, userRepository, taskActivityLogRepository);
 const listTasksUseCase = new ListTasksUseCase(taskRepository);
 const getTaskUseCase = new GetTaskUseCase(taskRepository);
-const updateTaskUseCase = new UpdateTaskUseCase(taskRepository);
-const deleteTaskUseCase = new DeleteTaskUseCase(taskRepository);
-const addAssigneeUseCase = new AddAssigneeUseCase(taskRepository, userRepository);
-const removeAssigneeUseCase = new RemoveAssigneeUseCase(taskRepository);
-const addTaskStatusUseCase = new AddTaskStatusUseCase(taskRepository, statusRepository);
-const setCurrentStatusUseCase = new SetCurrentStatusUseCase(taskRepository);
-const addTaskLabelUseCase = new AddTaskLabelUseCase(taskRepository, labelRepository);
-const removeTaskLabelUseCase = new RemoveTaskLabelUseCase(taskRepository);
+const updateTaskUseCase = new UpdateTaskUseCase(taskRepository, taskActivityLogRepository);
+const deleteTaskUseCase = new DeleteTaskUseCase(taskRepository, taskActivityLogRepository);
+const addAssigneeUseCase = new AddAssigneeUseCase(taskRepository, userRepository, taskActivityLogRepository);
+const removeAssigneeUseCase = new RemoveAssigneeUseCase(taskRepository, taskActivityLogRepository);
+const addTaskStatusUseCase = new AddTaskStatusUseCase(taskRepository, statusRepository, taskActivityLogRepository);
+const setCurrentStatusUseCase = new SetCurrentStatusUseCase(taskRepository, taskActivityLogRepository);
+const addTaskLabelUseCase = new AddTaskLabelUseCase(taskRepository, labelRepository, taskActivityLogRepository);
+const removeTaskLabelUseCase = new RemoveTaskLabelUseCase(taskRepository, taskActivityLogRepository);
+const removeTaskStatusUseCase = new RemoveTaskStatusUseCase(taskRepository, taskActivityLogRepository);
+const cloneTaskUseCase = new CloneTaskUseCase(taskRepository, taskActivityLogRepository);
 
 // Statuses
 const createStatusUseCase = new CreateStatusUseCase(statusRepository);
@@ -121,10 +134,17 @@ const updateLabelUseCase = new UpdateLabelUseCase(labelRepository);
 const deleteLabelUseCase = new DeleteLabelUseCase(labelRepository);
 
 // Comments
-const createCommentUseCase = new CreateCommentUseCase(commentRepository, taskRepository);
+const createCommentUseCase = new CreateCommentUseCase(commentRepository, taskRepository, taskActivityLogRepository);
 const getCommentUseCase = new GetCommentUseCase(commentRepository);
 const updateCommentUseCase = new UpdateCommentUseCase(commentRepository);
 const deleteCommentUseCase = new DeleteCommentUseCase(commentRepository);
+const listCommentsByTaskUseCase = new ListCommentsByTaskUseCase(commentRepository, taskRepository);
+
+// Reports
+const getTaskReportUseCase = new GetTaskReportUseCase(taskRepository, statusRepository, userRepository);
+
+// Activity Logs
+const listTaskActivityLogsUseCase = new ListTaskActivityLogsUseCase(taskActivityLogRepository, taskRepository);
 
 export const container = {
   // Providers
@@ -159,6 +179,8 @@ export const container = {
   setCurrentStatusUseCase,
   addTaskLabelUseCase,
   removeTaskLabelUseCase,
+  removeTaskStatusUseCase,
+  cloneTaskUseCase,
 
   // Statuses
   createStatusUseCase,
@@ -179,5 +201,12 @@ export const container = {
   getCommentUseCase,
   updateCommentUseCase,
   deleteCommentUseCase,
+  listCommentsByTaskUseCase,
+
+  // Reports
+  getTaskReportUseCase,
+
+  // Activity Logs
+  listTaskActivityLogsUseCase,
 };
 

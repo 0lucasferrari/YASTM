@@ -12,6 +12,8 @@ import {
   taskIdParamSchema,
   taskAssigneeParamSchema,
   taskLabelParamSchema,
+  taskStatusParamSchema,
+  activityLogQuerySchema,
 } from '../validators/taskValidators';
 
 export function taskRoutes(taskController: TaskController): Router {
@@ -24,12 +26,16 @@ export function taskRoutes(taskController: TaskController): Router {
   router.put('/:id', validateRequest({ params: taskIdParamSchema, body: updateTaskSchema }), taskController.update);
   router.delete('/:id', validateRequest({ params: taskIdParamSchema }), taskController.delete);
 
+  // Clone
+  router.post('/:id/clone', validateRequest({ params: taskIdParamSchema }), taskController.clone);
+
   // Assignees
   router.post('/:id/assignees', validateRequest({ params: taskIdParamSchema, body: addAssigneeSchema }), taskController.addAssignee);
   router.delete('/:id/assignees/:userId', validateRequest({ params: taskAssigneeParamSchema }), taskController.removeAssignee);
 
   // Statuses
   router.post('/:id/statuses', validateRequest({ params: taskIdParamSchema, body: addStatusSchema }), taskController.addStatus);
+  router.delete('/:id/statuses/:statusId', validateRequest({ params: taskStatusParamSchema }), taskController.removeStatus);
   router.put('/:id/current-status', validateRequest({ params: taskIdParamSchema, body: setCurrentStatusSchema }), taskController.setCurrentStatus);
 
   // Labels
@@ -37,8 +43,11 @@ export function taskRoutes(taskController: TaskController): Router {
   router.delete('/:id/labels/:labelId', validateRequest({ params: taskLabelParamSchema }), taskController.removeLabel);
 
   // Comments
+  router.get('/:id/comments', validateRequest({ params: taskIdParamSchema }), taskController.listComments);
   router.post('/:id/comments', validateRequest({ params: taskIdParamSchema, body: addCommentSchema }), taskController.addComment);
+
+  // Activity Logs
+  router.get('/:id/activity-logs', validateRequest({ params: taskIdParamSchema, query: activityLogQuerySchema }), taskController.listActivityLogs);
 
   return router;
 }
-

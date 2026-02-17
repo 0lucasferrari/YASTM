@@ -81,6 +81,31 @@ Handles HTTP concerns. Translates HTTP requests into use case calls and use case
 
 Wiring happens in `src/shared/container.ts`. This is the only place where concrete implementations are instantiated and injected into use cases. No DI framework is used — just manual constructor injection (KISS/YAGNI).
 
+## Frontend (`client/`)
+
+The frontend is a **React** single-page application, separate from the backend's Clean Architecture layers. It lives in the `client/` directory with its own `package.json` and build tooling.
+
+- **Framework**: React 19 + TypeScript
+- **Build tool**: Vite
+- **Design system**: [Material UI (MUI)](https://mui.com/material-ui/) — implements Google's Material Design
+- **Routing**: React Router
+- **Dev proxy**: Vite proxies `/api` requests to the Express backend (`http://localhost:3000`) during development, avoiding CORS issues
+
+### Frontend Structure
+
+| Directory / File     | Purpose                                             |
+|----------------------|-----------------------------------------------------|
+| `components/`        | Reusable UI components (`Layout`, `ProtectedRoute`) |
+| `hooks/`             | React hooks (`useAuth` — context for JWT auth)      |
+| `pages/`             | Page-level components (one per route)               |
+| `services/`          | API client (`fetch` wrapper with auth headers)      |
+| `theme/`             | MUI theme customization (palette, typography, etc.) |
+| `types/`             | Shared TypeScript interfaces matching API responses |
+| `App.tsx`            | Root component — routing + auth provider            |
+| `main.tsx`           | Entry point — renders into DOM with MUI theme       |
+
+> The frontend is a **consumer** of the REST API. It has no direct access to domain logic, database, or backend modules.
+
 ## Other Principles
 
 - **YAGNI**: No feature is built until needed. No unnecessary abstractions.

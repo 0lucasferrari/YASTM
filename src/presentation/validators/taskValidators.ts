@@ -5,6 +5,7 @@ export const createTaskSchema = z.object({
   description: z.string().nullable().optional(),
   parent_task_id: z.uuid().nullable().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).nullable().optional(),
+  predicted_finish_date: z.iso.datetime().nullable().optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -12,6 +13,7 @@ export const updateTaskSchema = z.object({
   description: z.string().nullable().optional(),
   parent_task_id: z.uuid().nullable().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).nullable().optional(),
+  predicted_finish_date: z.iso.datetime().nullable().optional(),
 });
 
 export const addAssigneeSchema = z.object({
@@ -46,5 +48,18 @@ export const taskAssigneeParamSchema = z.object({
 export const taskLabelParamSchema = z.object({
   id: z.uuid('Invalid task UUID'),
   labelId: z.uuid('Invalid label UUID'),
+});
+
+export const taskStatusParamSchema = z.object({
+  id: z.uuid('Invalid task UUID'),
+  statusId: z.uuid('Invalid status UUID'),
+});
+
+export const activityLogQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  includeSubtasks: z.coerce.boolean().default(false),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 

@@ -45,11 +45,25 @@ YASTM/
 ├── tests/
 │   ├── unit/              # Unit tests (use cases with mocked repos)
 │   └── integration/       # Integration tests (API routes with supertest)
+├── client/                 # React frontend (Vite + MUI)
+│   ├── src/
+│   │   ├── components/    # Reusable UI components (Layout, ProtectedRoute)
+│   │   ├── hooks/         # React hooks (useAuth)
+│   │   ├── pages/         # Page components (Dashboard, Tasks, Teams, etc.)
+│   │   ├── services/      # API client (fetch wrapper)
+│   │   ├── theme/         # MUI theme configuration
+│   │   ├── types/         # TypeScript type definitions
+│   │   ├── App.tsx        # Root component with routing
+│   │   └── main.tsx       # Entry point (renders into DOM)
+│   ├── index.html         # HTML shell
+│   ├── vite.config.ts     # Vite config (dev proxy to API)
+│   ├── tsconfig.json      # TypeScript config
+│   └── package.json       # Client dependencies
 ├── .env.example           # Environment variable template
 ├── knexfile.ts            # Knex CLI configuration
-├── tsconfig.json          # TypeScript configuration
+├── tsconfig.json          # TypeScript configuration (API)
 ├── jest.config.ts         # Jest configuration
-└── package.json           # Dependencies and scripts
+└── package.json           # API dependencies and scripts
 ```
 
 ## File Naming Conventions
@@ -84,25 +98,44 @@ presentation/routes/taskRoutes.ts           # Route definitions
 
 ## Key Files
 
-| File                        | Purpose                                              |
-|-----------------------------|------------------------------------------------------|
-| `src/server.ts`             | Entry point — imports app, calls `app.listen()`      |
-| `src/app.ts`                | Creates Express app, mounts middlewares and routes    |
-| `src/shared/container.ts`   | Composition root — instantiates all dependencies     |
-| `src/shared/config/env.ts`  | Parses and validates env vars using Zod              |
-| `knexfile.ts`               | Knex CLI config (points to connection, migrations dir)|
+| File                           | Purpose                                              |
+|--------------------------------|------------------------------------------------------|
+| `src/server.ts`                | Entry point — imports app, calls `app.listen()`      |
+| `src/app.ts`                   | Creates Express app, mounts middlewares and routes    |
+| `src/shared/container.ts`      | Composition root — instantiates all dependencies     |
+| `src/shared/config/env.ts`     | Parses and validates env vars using Zod              |
+| `knexfile.ts`                  | Knex CLI config (points to connection, migrations dir)|
+| `client/src/App.tsx`           | React root — routing and auth provider               |
+| `client/src/hooks/useAuth.tsx` | Auth context — login, register, logout, token mgmt   |
+| `client/src/services/api.ts`   | API client — fetch wrapper with JWT auth headers     |
+| `client/src/theme/theme.ts`    | MUI theme — palette, typography, component overrides |
+| `client/vite.config.ts`        | Vite config — dev server proxy to Express API        |
 
 ## Scripts (package.json)
 
-| Script          | Command                         | Description                    |
-|-----------------|---------------------------------|--------------------------------|
-| `dev`           | `nodemon src/server.ts`         | Start dev server with reload   |
-| `build`         | `tsc`                           | Compile TypeScript             |
-| `start`         | `node dist/server.js`           | Start production server        |
-| `test`          | `jest`                          | Run all tests                  |
-| `test:unit`     | `jest tests/unit`               | Run unit tests only            |
-| `test:int`      | `jest tests/integration`        | Run integration tests only     |
-| `migrate`       | `knex migrate:latest`           | Run pending migrations         |
-| `migrate:rollback` | `knex migrate:rollback`      | Rollback last migration batch  |
-| `seed`          | `knex seed:run`                 | Run seed files                 |
+### API (root)
+
+| Script             | Command                         | Description                    |
+|--------------------|---------------------------------|--------------------------------|
+| `dev`              | `nodemon src/server.ts`         | Start API dev server with reload |
+| `build`            | `tsc`                           | Compile API TypeScript         |
+| `start`            | `node dist/server.js`           | Start production API server    |
+| `test`             | `jest`                          | Run all tests                  |
+| `test:unit`        | `jest tests/unit`               | Run unit tests only            |
+| `test:int`         | `jest tests/integration`        | Run integration tests only     |
+| `migrate`          | `knex migrate:latest`           | Run pending migrations         |
+| `migrate:rollback` | `knex migrate:rollback`         | Rollback last migration batch  |
+| `seed`             | `knex seed:run`                 | Run seed files                 |
+| `client:install`   | `cd client && npm install`      | Install client dependencies    |
+| `client:dev`       | `cd client && npm run dev`      | Start client dev server        |
+| `client:build`     | `cd client && npm run build`    | Build client for production    |
+| `client:preview`   | `cd client && npm run preview`  | Preview production client build|
+
+### Client (`client/package.json`)
+
+| Script    | Command           | Description                          |
+|-----------|-------------------|--------------------------------------|
+| `dev`     | `vite`            | Start Vite dev server (port 5173)    |
+| `build`   | `tsc -b && vite build` | Type-check and build for production |
+| `preview` | `vite preview`    | Preview production build             |
 

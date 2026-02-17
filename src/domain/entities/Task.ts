@@ -8,6 +8,7 @@ export interface Task {
   assignor_id: string;
   current_status_id: string | null;
   priority: Priority | null;
+  predicted_finish_date: Date | null;
   created_at: Date;
   created_by: string | null;
   updated_at: Date;

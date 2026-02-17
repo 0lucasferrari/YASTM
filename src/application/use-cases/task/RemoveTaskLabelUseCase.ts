@@ -1,14 +1,21 @@
+import { v4 as uuidv4 } from 'uuid';
 import { IUseCase } from '../../interfaces/IUseCase';
 import { ITaskRepository } from '../../../domain/repositories/ITaskRepository';
+import { ITaskActivityLogRepository } from '../../../domain/repositories/ITaskActivityLogRepository';
+import { TaskAction } from '../../../domain/enums/TaskAction';
 import { AppError } from '../../../domain/errors/AppError';
 
 interface RemoveTaskLabelInputDTO {
   task_id: string;
   label_id: string;
+  performed_by: string;
 }
 
 export class RemoveTaskLabelUseCase implements IUseCase<RemoveTaskLabelInputDTO, void> {
-  constructor(private readonly taskRepository: ITaskRepository) {}
+  constructor(
+    private readonly taskRepository: ITaskRepository,
+    private readonly logRepository: ITaskActivityLogRepository,
+  ) {}
 
   async execute(input: RemoveTaskLabelInputDTO): Promise<void> {
     const task = await this.taskRepository.findById(input.task_id);
@@ -22,6 +29,16 @@ export class RemoveTaskLabelUseCase implements IUseCase<RemoveTaskLabelInputDTO,
     }
 
     await this.taskRepository.removeLabel(input.task_id, input.label_id);
+
+    await this.logRepository.create({
+      id: uuidv4(),
+      task_id: input.task_id,
+      user_id: input.performed_by,
+      action: TaskAction.LABEL_REMOVED,
+      field: null,
+      old_value: input.label_id,
+      new_value: null,
+      created_at: new Date(),
+    });
   }
 }
-

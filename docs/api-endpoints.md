@@ -212,7 +212,8 @@ Create a new task. The authenticated user is automatically set as the assignor.
   "title": "Implement login page",
   "description": "Build the login form with validation",
   "parent_task_id": "uuid | null",
-  "priority": "HIGH | null"
+  "priority": "HIGH | null",
+  "predicted_finish_date": "2026-03-01T00:00:00.000Z | null"
 }
 ```
 
@@ -241,7 +242,8 @@ Update task fields.
 {
   "title": "Updated title",
   "description": "Updated description",
-  "priority": "CRITICAL"
+  "priority": "CRITICAL",
+  "predicted_finish_date": "2026-03-01T00:00:00.000Z | null"
 }
 ```
 
@@ -332,6 +334,40 @@ Remove a label from the task.
 **Response (204):** No content.
 
 **Errors:** 404
+
+### GET /api/tasks/:id/activity-logs
+
+List paginated activity log entries for a task, ordered by most recent first.
+
+**Query Params:**
+- `page` (integer, default 1) — page number (1-based)
+- `limit` (integer, default 20, max 100) — items per page
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "task_id": "uuid",
+        "user_id": "uuid",
+        "action": "TASK_UPDATED",
+        "field": "title",
+        "old_value": "Old Title",
+        "new_value": "New Title",
+        "created_at": "2026-02-17T12:00:00.000Z"
+      }
+    ],
+    "total": 42,
+    "page": 1,
+    "totalPages": 3
+  }
+}
+```
+
+**Errors:** 404 (task not found)
 
 ### POST /api/tasks/:id/comments
 

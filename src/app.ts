@@ -11,6 +11,7 @@ import { TaskController } from './presentation/controllers/TaskController';
 import { StatusController } from './presentation/controllers/StatusController';
 import { LabelController } from './presentation/controllers/LabelController';
 import { CommentController } from './presentation/controllers/CommentController';
+import { ReportController } from './presentation/controllers/ReportController';
 
 // Routes
 import { authRoutes } from './presentation/routes/authRoutes';
@@ -20,6 +21,7 @@ import { taskRoutes } from './presentation/routes/taskRoutes';
 import { statusRoutes } from './presentation/routes/statusRoutes';
 import { labelRoutes } from './presentation/routes/labelRoutes';
 import { commentRoutes } from './presentation/routes/commentRoutes';
+import { reportRoutes } from './presentation/routes/reportRoutes';
 
 const app = express();
 
@@ -60,10 +62,14 @@ const taskController = new TaskController(
   container.addAssigneeUseCase,
   container.removeAssigneeUseCase,
   container.addTaskStatusUseCase,
+  container.removeTaskStatusUseCase,
   container.setCurrentStatusUseCase,
   container.addTaskLabelUseCase,
   container.removeTaskLabelUseCase,
+  container.cloneTaskUseCase,
   container.createCommentUseCase,
+  container.listCommentsByTaskUseCase,
+  container.listTaskActivityLogsUseCase,
 );
 
 const statusController = new StatusController(
@@ -88,8 +94,13 @@ const commentController = new CommentController(
   container.deleteCommentUseCase,
 );
 
+const reportController = new ReportController(
+  container.getTaskReportUseCase,
+);
+
 // --- Public routes (no auth required) ---
 app.use('/api/auth', authRoutes(authController));
+app.use('/api/reports', reportRoutes(reportController));
 
 // --- Protected routes (auth required) ---
 const auth = authMiddleware(container.tokenProvider);
