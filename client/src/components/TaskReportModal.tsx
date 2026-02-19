@@ -255,7 +255,7 @@ export default function TaskReportModal({
   };
 
   const handleExportXlsx = async () => {
-    const XLSX = await import('xlsx');
+    const ExcelJS = (await import('exceljs')).default;
 
     const rows = buildExportRows();
     const headers = [
@@ -266,23 +266,30 @@ export default function TaskReportModal({
       t('report.colPredictedConclusion'),
     ];
 
-    const wsData = [
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(t('report.title'));
+    worksheet.addRows([
       headers,
       ...rows.map((r) => [r.title, r.description, r.status, r.assignee, r.predictedConclusion]),
+    ]);
+    worksheet.columns = [
+      { width: 40 },
+      { width: 50 },
+      { width: 20 },
+      { width: 30 },
+      { width: 20 },
     ];
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = [
-      { wch: 40 },
-      { wch: 50 },
-      { wch: 20 },
-      { wch: 30 },
-      { wch: 20 },
-    ];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, t('report.title'));
-    XLSX.writeFile(wb, `report-${rootTask?.title ?? 'task'}.xlsx`);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `report-${rootTask?.title ?? 'task'}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleOpenPublicReport = () => {
