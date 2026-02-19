@@ -8,7 +8,6 @@ import { LoginUseCase } from '../../src/application/use-cases/auth/LoginUseCase'
 import { IUserRepository } from '../../src/domain/repositories/IUserRepository';
 import { IHashProvider } from '../../src/domain/providers/IHashProvider';
 import { ITokenProvider } from '../../src/domain/providers/ITokenProvider';
-import { AppError } from '../../src/domain/errors/AppError';
 
 describe('Auth Routes', () => {
   let app: express.Express;

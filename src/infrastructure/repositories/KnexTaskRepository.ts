@@ -1,7 +1,6 @@
 import { Knex } from 'knex';
 import { Task } from '../../domain/entities/Task';
 import { ITaskRepository } from '../../domain/repositories/ITaskRepository';
-import { Priority } from '../../domain/enums/Priority';
 
 export class KnexTaskRepository implements ITaskRepository {
   constructor(private readonly db: Knex) {}

@@ -2,7 +2,6 @@ import { RegisterUseCase } from '../../src/application/use-cases/auth/RegisterUs
 import { IUserRepository } from '../../src/domain/repositories/IUserRepository';
 import { IHashProvider } from '../../src/domain/providers/IHashProvider';
 import { AppError } from '../../src/domain/errors/AppError';
-import { User } from '../../src/domain/entities/User';
 
 describe('RegisterUseCase', () => {
   let registerUseCase: RegisterUseCase;

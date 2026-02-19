@@ -74,41 +74,43 @@ Copy the example file and fill in your values:
 cp .env.example .env
 ```
 
-Edit `.env` with your database credentials:
+Edit `.env` with your database credentials. Use **Option 2** if your password contains special characters (`@`, `#`, `%`, etc.):
 
-**PostgreSQL** (default):
+**Option 1 – Full URL** (password must be URL-encoded, e.g. `@` → `%40`):
 
 ```env
-NODE_ENV=development
-PORT=3000
-DB_CLIENT=pg
 DATABASE_URL=postgresql://user:password@localhost:5432/yastm
-JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRES_IN=24h
-BCRYPT_SALT_ROUNDS=10
+DATABASE_URL_TEST=postgresql://user:password@localhost:5432/yastm_test
 ```
 
-**MySQL 8:**
+**Option 2 – Separate components** (recommended for passwords with special characters):
 
 ```env
-NODE_ENV=development
-PORT=3000
-DB_CLIENT=mysql2
-DATABASE_URL=mysql://user:password@localhost:3306/yastm
-JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRES_IN=24h
-BCRYPT_SALT_ROUNDS=10
+DB_CLIENT=pg
+DB_HOST=localhost
+DB_USER=user
+DB_PASSWORD=your-password-with-special-chars@#%
+DB_NAME=yastm
+DB_PORT=5432
+DB_NAME_TEST=yastm_test
 ```
 
-| Variable             | Description                                       | Default     |
-|----------------------|---------------------------------------------------|-------------|
-| `NODE_ENV`           | Environment mode (`development` / `production`)   | —           |
-| `PORT`               | Port for the API server                           | `3000`      |
-| `DB_CLIENT`          | Database driver (`pg` or `mysql2`)                | `pg`        |
-| `DATABASE_URL`       | Database connection string                        | —           |
-| `JWT_SECRET`         | Secret key for signing JWT tokens                 | —           |
-| `JWT_EXPIRES_IN`     | Token expiration (e.g. `24h`, `7d`)               | `24h`       |
-| `BCRYPT_SALT_ROUNDS` | Number of bcrypt hashing rounds                   | `10`        |
+| Variable             | Description                                                       | Default     |
+|----------------------|-------------------------------------------------------------------|-------------|
+| `NODE_ENV`           | Environment mode (`development` / `production`)                   | —           |
+| `PORT`               | Port for the API server                                           | `3000`      |
+| `DB_CLIENT`          | Database driver (`pg` or `mysql2`)                                | `pg`        |
+| `DATABASE_URL`       | Full connection URL (use if no special chars in password)        | —           |
+| `DATABASE_URL_TEST`  | Full test DB URL (optional)                                       | —           |
+| `DB_HOST`            | Database host (alternative to `DATABASE_URL`)                      | —           |
+| `DB_USER`            | Database user (alternative to `DATABASE_URL`)                     | —           |
+| `DB_PASSWORD`        | Database password (handles special chars; use with `DB_*` vars)   | —           |
+| `DB_NAME`            | Database name (alternative to `DATABASE_URL`)                      | —           |
+| `DB_PORT`            | Database port (optional; 5432 for pg, 3306 for mysql)             | —           |
+| `DB_NAME_TEST`       | Test database name (optional; when using `DB_*` vars)             | —           |
+| `JWT_SECRET`         | Secret key for signing JWT tokens                                 | —           |
+| `JWT_EXPIRES_IN`     | Token expiration (e.g. `24h`, `7d`)                               | `24h`       |
+| `BCRYPT_SALT_ROUNDS` | Number of bcrypt hashing rounds                                   | `10`        |
 
 ### 4. Create the database
 

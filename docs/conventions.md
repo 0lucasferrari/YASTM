@@ -112,12 +112,13 @@ All responses use a consistent envelope:
 
 All environment variables are validated at startup using Zod in `src/shared/config/env.ts`. The app fails fast if required variables are missing.
 
-Required variables (documented in `.env.example`):
+Required variables (documented in `.env.example`). Use `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` instead of `DATABASE_URL` when the password contains special characters:
 
 ```
 NODE_ENV=development
 PORT=3000
 DATABASE_URL=postgresql://user:password@localhost:5432/yastm
+# Or: DB_HOST, DB_USER, DB_PASSWORD, DB_NAME (for special chars in password)
 JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=24h
 BCRYPT_SALT_ROUNDS=10
