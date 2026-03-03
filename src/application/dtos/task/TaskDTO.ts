@@ -15,6 +15,7 @@ export interface UpdateTaskInputDTO {
   title?: string;
   description?: string | null;
   parent_task_id?: string | null;
+  current_status_id?: string | null;
   priority?: Priority | null;
   predicted_finish_date?: string | null;
   updated_by: string;

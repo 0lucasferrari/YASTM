@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
 import DashboardPage from './pages/DashboardPage.tsx';
 import TasksPage from './pages/TasksPage.tsx';
+import KanbanPage from './pages/KanbanPage.tsx';
 import TeamsPage from './pages/TeamsPage.tsx';
 import UsersPage from './pages/UsersPage.tsx';
 import StatusesPage from './pages/StatusesPage.tsx';
@@ -39,6 +40,7 @@ function AppRoutes() {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/kanban" element={<KanbanPage />} />
         <Route path="/teams" element={<TeamsPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/statuses" element={<StatusesPage />} />

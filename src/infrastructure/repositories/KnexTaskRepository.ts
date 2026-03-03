@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
 import { Task } from '../../domain/entities/Task';
 import { ITaskRepository } from '../../domain/repositories/ITaskRepository';
+import { insertAndReturn, updateAndReturn } from '../database/knex-helpers';
 
 export class KnexTaskRepository implements ITaskRepository {
   constructor(private readonly db: Knex) {}
@@ -18,22 +19,14 @@ export class KnexTaskRepository implements ITaskRepository {
   }
 
   async create(task: Omit<Task, 'created_at' | 'updated_at' | 'deleted_at' | 'deleted_by'>): Promise<Task> {
-    const [created] = await this.db('tasks')
-      .insert(task)
-      .returning('*');
-    return created;
+    return insertAndReturn(this.db, 'tasks', task as Record<string, unknown>) as unknown as Promise<Task>;
   }
 
   async update(
     id: string,
     data: Partial<Pick<Task, 'title' | 'description' | 'parent_task_id' | 'current_status_id' | 'priority' | 'predicted_finish_date' | 'updated_by'>>,
   ): Promise<Task | null> {
-    const [updated] = await this.db('tasks')
-      .where({ id })
-      .whereNull('deleted_at')
-      .update({ ...data, updated_at: this.db.fn.now() })
-      .returning('*');
-    return updated || null;
+    return updateAndReturn<Task>(this.db, 'tasks', id, { ...data, updated_at: this.db.fn.now() });
   }
 
   async softDelete(id: string, deletedBy: string): Promise<void> {

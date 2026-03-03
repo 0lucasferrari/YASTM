@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
 import { Label } from '../../domain/entities/Label';
 import { ILabelRepository } from '../../domain/repositories/ILabelRepository';
+import { insertAndReturn, updateAndReturn } from '../database/knex-helpers';
 
 export class KnexLabelRepository implements ILabelRepository {
   constructor(private readonly db: Knex) {}
@@ -18,19 +19,11 @@ export class KnexLabelRepository implements ILabelRepository {
   }
 
   async create(label: Omit<Label, 'created_at' | 'updated_at' | 'deleted_at' | 'deleted_by'>): Promise<Label> {
-    const [created] = await this.db('labels')
-      .insert(label)
-      .returning('*');
-    return created;
+    return insertAndReturn(this.db, 'labels', label as Record<string, unknown>) as unknown as Promise<Label>;
   }
 
   async update(id: string, data: Partial<Pick<Label, 'title' | 'description' | 'updated_by'>>): Promise<Label | null> {
-    const [updated] = await this.db('labels')
-      .where({ id })
-      .whereNull('deleted_at')
-      .update({ ...data, updated_at: this.db.fn.now() })
-      .returning('*');
-    return updated || null;
+    return updateAndReturn<Label>(this.db, 'labels', id, { ...data, updated_at: this.db.fn.now() });
   }
 
   async softDelete(id: string, deletedBy: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
 import { User } from '../../domain/entities/User';
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { insertAndReturn, updateAndReturn } from '../database/knex-helpers';
 
 export class KnexUserRepository implements IUserRepository {
   constructor(private readonly db: Knex) {}
@@ -26,19 +27,11 @@ export class KnexUserRepository implements IUserRepository {
   }
 
   async create(user: Omit<User, 'created_at' | 'updated_at' | 'deleted_at' | 'deleted_by'>): Promise<User> {
-    const [created] = await this.db('users')
-      .insert(user)
-      .returning('*');
-    return created;
+    return insertAndReturn(this.db, 'users', user as Record<string, unknown>) as unknown as Promise<User>;
   }
 
   async update(id: string, data: Partial<Pick<User, 'name' | 'email' | 'password' | 'team_id' | 'updated_by'>>): Promise<User | null> {
-    const [updated] = await this.db('users')
-      .where({ id })
-      .whereNull('deleted_at')
-      .update({ ...data, updated_at: this.db.fn.now() })
-      .returning('*');
-    return updated || null;
+    return updateAndReturn<User>(this.db, 'users', id, { ...data, updated_at: this.db.fn.now() });
   }
 
   async softDelete(id: string, deletedBy: string): Promise<void> {

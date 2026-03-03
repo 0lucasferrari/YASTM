@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
 import { Team } from '../../domain/entities/Team';
 import { ITeamRepository } from '../../domain/repositories/ITeamRepository';
+import { insertAndReturn, updateAndReturn } from '../database/knex-helpers';
 
 export class KnexTeamRepository implements ITeamRepository {
   constructor(private readonly db: Knex) {}
@@ -18,19 +19,11 @@ export class KnexTeamRepository implements ITeamRepository {
   }
 
   async create(team: Omit<Team, 'created_at' | 'updated_at' | 'deleted_at' | 'deleted_by'>): Promise<Team> {
-    const [created] = await this.db('teams')
-      .insert(team)
-      .returning('*');
-    return created;
+    return insertAndReturn(this.db, 'teams', team as Record<string, unknown>) as unknown as Promise<Team>;
   }
 
   async update(id: string, data: Partial<Pick<Team, 'name' | 'updated_by'>>): Promise<Team | null> {
-    const [updated] = await this.db('teams')
-      .where({ id })
-      .whereNull('deleted_at')
-      .update({ ...data, updated_at: this.db.fn.now() })
-      .returning('*');
-    return updated || null;
+    return updateAndReturn<Team>(this.db, 'teams', id, { ...data, updated_at: this.db.fn.now() });
   }
 
   async softDelete(id: string, deletedBy: string): Promise<void> {

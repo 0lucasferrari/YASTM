@@ -2,6 +2,15 @@
 
 YASTM supports **PostgreSQL** and **MySQL 8** via **Knex.js** as the query builder. The database driver is selected through the `DB_CLIENT` environment variable (`pg` or `mysql2`). All schema changes are managed through Knex migrations that are dialect-aware.
 
+## MySQL Compatibility
+
+MySQL does not support PostgreSQL's `RETURNING` clause. All repository `create` and `update` operations use the shared helpers in `src/infrastructure/database/knex-helpers.ts`, which:
+
+- **PostgreSQL**: Uses `.returning('*')` for insert/update.
+- **MySQL**: Performs insert/update followed by a `SELECT` to fetch the affected row.
+
+When adding new repositories or modifying insert/update logic, use `insertAndReturn` and `updateAndReturn` from the helpers instead of raw `.returning()` to ensure both databases work correctly.
+
 ## General Conventions
 
 - All primary keys are **UUIDs** (generated application-side using the `uuid` package).

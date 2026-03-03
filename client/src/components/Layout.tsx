@@ -23,6 +23,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import LabelIcon from '@mui/icons-material/Label';
 import TrafficIcon from '@mui/icons-material/Traffic';
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../hooks/useAuth.tsx';
 
@@ -37,6 +38,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { labelKey: 'nav.dashboard', path: '/', icon: <DashboardIcon /> },
   { labelKey: 'nav.tasks', path: '/tasks', icon: <TaskIcon /> },
+  { labelKey: 'nav.kanban', path: '/tasks/kanban', icon: <ViewKanbanIcon /> },
   { labelKey: 'nav.teams', path: '/teams', icon: <GroupWorkIcon /> },
   { labelKey: 'nav.users', path: '/users', icon: <PeopleIcon /> },
   { labelKey: 'nav.statuses', path: '/statuses', icon: <TrafficIcon /> },

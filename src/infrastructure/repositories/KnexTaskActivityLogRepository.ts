@@ -2,16 +2,33 @@ import { Knex } from 'knex';
 import { TaskActivityLog } from '../../domain/entities/TaskActivityLog';
 import { ActivityLogDateFilter, ITaskActivityLogRepository } from '../../domain/repositories/ITaskActivityLogRepository';
 
+/** Remove undefined values so Knex doesn't pass them as DEFAULT (breaks MySQL for required fields) */
+function sanitizeLog(log: TaskActivityLog): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(log)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
+}
+
 export class KnexTaskActivityLogRepository implements ITaskActivityLogRepository {
   constructor(private readonly db: Knex) {}
 
   async create(log: TaskActivityLog): Promise<void> {
-    await this.db('task_activity_logs').insert(log);
+    if (log.task_id == null || log.task_id === '') {
+      throw new Error('TaskActivityLog requires a valid task_id');
+    }
+    await this.db('task_activity_logs').insert(sanitizeLog(log));
   }
 
   async createMany(logs: TaskActivityLog[]): Promise<void> {
     if (logs.length === 0) return;
-    await this.db('task_activity_logs').insert(logs);
+    for (const log of logs) {
+      if (log.task_id == null || log.task_id === '') {
+        throw new Error('TaskActivityLog requires a valid task_id');
+      }
+    }
+    await this.db('task_activity_logs').insert(logs.map(sanitizeLog));
   }
 
   private applyDateFilter(query: Knex.QueryBuilder, dateFilter?: ActivityLogDateFilter): Knex.QueryBuilder {

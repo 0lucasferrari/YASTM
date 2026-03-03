@@ -29,10 +29,18 @@ export class UpdateTaskUseCase implements IUseCase<UpdateTaskInputDTO, TaskOutpu
       }
     }
 
+    if (input.current_status_id) {
+      const possibleStatusIds = await this.taskRepository.getStatuses(input.id);
+      if (!possibleStatusIds.includes(input.current_status_id)) {
+        throw new AppError('Status is not in the task\'s possible statuses. Add it first.', 400);
+      }
+    }
+
     const updated = await this.taskRepository.update(input.id, {
       title: input.title,
       description: input.description,
       parent_task_id: input.parent_task_id,
+      current_status_id: input.current_status_id,
       priority: input.priority,
       predicted_finish_date: input.predicted_finish_date !== undefined
         ? (input.predicted_finish_date ? new Date(input.predicted_finish_date) : null)
@@ -68,6 +76,9 @@ export class UpdateTaskUseCase implements IUseCase<UpdateTaskInputDTO, TaskOutpu
       if (oldDate !== newDate) {
         fieldsToCompare.push({ key: 'predicted_finish_date', oldVal: oldDate, newVal: newDate });
       }
+    }
+    if (input.current_status_id !== undefined && (input.current_status_id ?? null) !== (existing.current_status_id ?? null)) {
+      fieldsToCompare.push({ key: 'current_status_id', oldVal: existing.current_status_id ?? null, newVal: input.current_status_id ?? null });
     }
 
     for (const diff of fieldsToCompare) {

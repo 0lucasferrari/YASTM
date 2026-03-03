@@ -4,7 +4,7 @@
   "description": "Yet Another Simple Task Manager - RESTful API",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec tsx src/server.ts",
+    "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",

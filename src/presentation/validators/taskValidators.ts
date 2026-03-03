@@ -12,6 +12,7 @@ export const updateTaskSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
   parent_task_id: z.uuid().nullable().optional(),
+  current_status_id: z.uuid().nullable().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).nullable().optional(),
   predicted_finish_date: z.iso.datetime().nullable().optional(),
 });

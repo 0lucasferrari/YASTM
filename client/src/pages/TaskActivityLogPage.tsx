@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
+  Button,
   CircularProgress,
   FormControlLabel,
   IconButton,
@@ -20,6 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DownloadIcon from '@mui/icons-material/Download';
 import { tasks, users as usersApi, statuses as statusesApi, labels as labelsApi } from '../services/api.ts';
 import type { Task, TaskActivityLog, User, Status, Label } from '../types/index.ts';
 
@@ -44,6 +46,7 @@ export default function TaskActivityLogPage() {
   // Date filters
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   // Load all reference data once
   useEffect(() => {
@@ -238,6 +241,82 @@ export default function TaskActivityLogPage() {
     return translated === fieldKey ? field : translated;
   };
 
+  const handleDownloadXlsx = useCallback(async () => {
+    if (!taskId) return;
+    setExporting(true);
+    try {
+      const sd = startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined;
+      const ed = endDate ? new Date(endDate + 'T23:59:59.999').toISOString() : undefined;
+      const limit = 100;
+      let allLogs: TaskActivityLog[] = [];
+      let pageNum = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const result = await tasks.activityLogs(taskId, pageNum, limit, includeSubtasks, sd, ed);
+        allLogs = allLogs.concat(result.items);
+        hasMore = pageNum * limit < result.total;
+        pageNum += 1;
+      }
+
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(t('activityLog.title'));
+
+      const headers = [
+        t('activityLog.date'),
+        ...(includeSubtasks ? [t('activityLog.task')] : []),
+        t('activityLog.user'),
+        t('activityLog.action'),
+        t('activityLog.field'),
+        t('activityLog.oldValue'),
+        t('activityLog.newValue'),
+      ];
+      worksheet.addRow(headers);
+
+      for (const log of allLogs) {
+        const row = [
+          new Date(log.created_at).toLocaleString(),
+          ...(includeSubtasks ? [taskMap[log.task_id] ?? log.task_id] : []),
+          userMap[log.user_id] ?? log.user_id,
+          formatAction(log.action),
+          formatField(log.field),
+          resolveValue(log.action, log.field, log.old_value),
+          resolveValue(log.action, log.field, log.new_value),
+        ];
+        worksheet.addRow(row);
+      }
+
+      worksheet.columns = headers.map((_, i) => ({ width: i === 0 ? 20 : 25 }));
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `historico-atividades-${taskTitle || taskId}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    } finally {
+      setExporting(false);
+    }
+  }, [
+    taskId,
+    includeSubtasks,
+    startDate,
+    endDate,
+    taskTitle,
+    userMap,
+    taskMap,
+    statusMap,
+    labelMap,
+    t,
+    resolveValue,
+  ]);
+
   const columnCount = includeSubtasks ? 7 : 6;
 
   return (
@@ -262,6 +341,19 @@ export default function TaskActivityLogPage() {
           }
           label={t('activityLog.includeSubtasks')}
         />
+        <Tooltip title={t('activityLog.downloadXlsx')}>
+          <span>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={exporting ? <CircularProgress size={16} /> : <DownloadIcon />}
+              onClick={handleDownloadXlsx}
+              disabled={exporting || loading}
+            >
+              {t('activityLog.downloadXlsx')}
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
 
       {/* Date range filters */}

@@ -32,6 +32,7 @@ const ptBR = {
     nav: {
       dashboard: 'Painel',
       tasks: 'Tarefas',
+      kanban: 'Kanban',
       teams: 'Equipes',
       users: 'Usuários',
       statuses: 'Status',
@@ -74,6 +75,17 @@ const ptBR = {
       subtasks: 'Subtarefas',
       subtasksCount_one: '{{count}} subtarefa (todos os níveis)',
       subtasksCount_other: '{{count}} subtarefas (todos os níveis)',
+    },
+
+    // ─── Kanban ─────────────────────────────────────────────────────────
+    kanban: {
+      title: 'Kanban',
+      noStatus: 'Sem status',
+      emptyColumn: 'Nenhuma tarefa',
+      tasksCount_one: '{{count}} tarefa',
+      tasksCount_other: '{{count}} tarefas',
+      filterByTask: 'Filtrar por tarefa',
+      filterByTaskPlaceholder: 'Todas as tarefas',
     },
 
     // ─── Task Detail Modal ──────────────────────────────────────────────
@@ -183,6 +195,8 @@ const ptBR = {
       exportPdf: 'Exportar PDF',
       exportXlsx: 'Exportar XLSX',
       openPublicReport: 'Abrir relatório público',
+      filterByStatus: 'Filtrar por status',
+      filterByStatusPlaceholder: 'Todos os status',
     },
 
     // ─── Activity Log ─────────────────────────────────────────────────
@@ -201,6 +215,7 @@ const ptBR = {
       rowsPerPage: 'Linhas por página',
       startDate: 'Data Início',
       endDate: 'Data Fim',
+      downloadXlsx: 'Baixar XLSX',
       actions: {
         TASK_CREATED: 'Tarefa criada',
         TASK_UPDATED: 'Tarefa atualizada',

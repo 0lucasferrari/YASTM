@@ -15,17 +15,18 @@ import {
   Typography,
   Alert,
   Paper,
-  LinearProgress,
   Button,
   AppBar,
   Toolbar,
+  Autocomplete,
+  TextField,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { PieChart } from '@mui/x-charts/PieChart';
-import { BarChart } from '@mui/x-charts/BarChart';
 import { reports, type TaskReportData } from '../services/api.ts';
 import type { Task } from '../types/index.ts';
+import PublicTaskDetailModal from '../components/PublicTaskDetailModal.tsx';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,8 @@ export default function TaskReportPage() {
   const [data, setData] = useState<TaskReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [filterStatusIds, setFilterStatusIds] = useState<string[]>([]);
 
   const loadReport = useCallback(async (id: string) => {
     setLoading(true);
@@ -103,18 +106,38 @@ export default function TaskReportPage() {
     ];
   }, [data, taskId]);
 
+  const filteredFlatRows: FlatRow[] = useMemo(() => {
+    if (filterStatusIds.length === 0) return flatRows;
+    const ids = new Set(filterStatusIds);
+    const includeNoStatus = ids.has('__no_status__');
+    return flatRows.filter((row) => {
+      const statusId = row.task.current_status_id;
+      if (statusId === null) return includeNoStatus;
+      return ids.has(statusId);
+    });
+  }, [flatRows, filterStatusIds]);
+
   // ─── Resolve helpers ────────────────────────────────────────────────
 
   const resolveStatus = (id: string) => data?.statuses.find((s) => s.id === id);
   const resolveUser = (id: string) => data?.users.find((u) => u.id === id);
 
+  const statusFilterOptions = useMemo(() => {
+    const opts: { id: string; label: string }[] = (data?.statuses ?? []).map((s) => ({
+      id: s.id,
+      label: s.title,
+    }));
+    opts.push({ id: '__no_status__', label: t('report.noStatus') });
+    return opts;
+  }, [data?.statuses, t]);
+
   // ─── Chart data ─────────────────────────────────────────────────────
 
-  const { statusPieData, completionPercent, statusBarData, totalTasks, tasksWithStatus } = useMemo(() => {
+  const { statusPieData, completionPercent, totalTasks, tasksWithStatus } = useMemo(() => {
     const statusCounts = new Map<string, number>();
     let withStatus = 0;
 
-    for (const row of flatRows) {
+    for (const row of filteredFlatRows) {
       if (row.task.current_status_id) {
         withStatus++;
         const count = statusCounts.get(row.task.current_status_id) ?? 0;
@@ -122,7 +145,7 @@ export default function TaskReportPage() {
       }
     }
 
-    const total = flatRows.length;
+    const total = filteredFlatRows.length;
     const noStatusCount = total - withStatus;
 
     const pieData: { id: string; value: number; label: string; color: string }[] = [];
@@ -146,24 +169,18 @@ export default function TaskReportPage() {
       });
     }
 
-    const barData = pieData.map((d) => ({
-      status: d.label,
-      count: d.value,
-    }));
-
     return {
       statusPieData: pieData,
       completionPercent: total > 0 ? Math.round((withStatus / total) * 100) : 0,
-      statusBarData: barData,
       totalTasks: total,
       tasksWithStatus: withStatus,
     };
-  }, [flatRows, data, t]);
+  }, [filteredFlatRows, data, t]);
 
   // ─── Export helpers ─────────────────────────────────────────────────
 
   const buildExportRows = () => {
-    return flatRows.map((row) => {
+    return filteredFlatRows.map((row) => {
       const indent = row.depth > 0 ? '  '.repeat(row.depth) + '↳ ' : '';
       const statusTitle = row.task.current_status_id
         ? resolveStatus(row.task.current_status_id)?.title ?? '—'
@@ -326,68 +343,52 @@ export default function TaskReportPage() {
           </Box>
         ) : data ? (
           <>
-            {/* ═══ CHARTS SECTION ═══ */}
-            <Box sx={{ display: 'flex', gap: 3, mb: 3, flexWrap: 'wrap' }}>
-              {/* Status Pie Chart */}
-              <Paper variant="outlined" sx={{ flex: 1, minWidth: 300, p: 2 }}>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  {t('report.statusDistribution')}
-                </Typography>
-                {statusPieData.length > 0 ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <PieChart
-                      series={[
-                        {
-                          data: statusPieData,
-                          highlightScope: { fade: 'global', highlight: 'item' },
-                          innerRadius: 40,
-                          paddingAngle: 2,
-                          cornerRadius: 4,
-                        },
-                      ]}
-                      width={400}
-                      height={250}
-                    />
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    {t('report.noData')}
-                  </Typography>
-                )}
-              </Paper>
-
-              {/* Overall Completion */}
-              <Paper variant="outlined" sx={{ flex: 1, minWidth: 300, p: 2 }}>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  {t('report.overallCompletion')}
-                </Typography>
-
-                <Box sx={{ mb: 2, mt: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('report.tasksWithStatus')}: {tasksWithStatus} / {totalTasks}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {completionPercent}%
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={completionPercent}
-                    sx={{ height: 10, borderRadius: 5 }}
+            {/* ═══ STATUS DISTRIBUTION CHART ═══ */}
+            <Paper variant="outlined" sx={{ mb: 3, p: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                {t('report.statusDistribution')}
+              </Typography>
+              {statusPieData.length > 0 ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <PieChart
+                    series={[
+                      {
+                        data: statusPieData,
+                        highlightScope: { fade: 'global', highlight: 'item' },
+                        innerRadius: 40,
+                        paddingAngle: 2,
+                        cornerRadius: 4,
+                      },
+                    ]}
+                    width={400}
+                    height={250}
                   />
                 </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                  {t('report.noData')}
+                </Typography>
+              )}
+            </Paper>
 
-                {statusBarData.length > 0 && (
-                  <BarChart
-                    xAxis={[{ scaleType: 'band', data: statusBarData.map((d) => d.status) }]}
-                    series={[{ data: statusBarData.map((d) => d.count), label: t('report.tasks'), color: '#1976d2' }]}
-                    width={400}
-                    height={200}
-                  />
-                )}
-              </Paper>
-            </Box>
+            {/* ═══ STATUS FILTER ═══ */}
+            <Autocomplete
+              multiple
+              options={statusFilterOptions}
+              getOptionLabel={(opt) => opt.label}
+              value={statusFilterOptions.filter((opt) => filterStatusIds.includes(opt.id))}
+              onChange={(_e, newValue) => {
+                setFilterStatusIds(newValue.map((v) => v.id));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={t('report.filterByStatus')}
+                  placeholder={t('report.filterByStatusPlaceholder')}
+                />
+              )}
+              sx={{ mb: 3, maxWidth: 400 }}
+            />
 
             {/* ═══ TABLE SECTION ═══ */}
             <Paper variant="outlined" ref={tableRef}>
@@ -403,7 +404,7 @@ export default function TaskReportPage() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {flatRows.length === 0 ? (
+                    {filteredFlatRows.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} align="center">
                           <Typography color="text.secondary" sx={{ py: 4 }}>
@@ -412,7 +413,7 @@ export default function TaskReportPage() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      flatRows.map((row) => {
+                      filteredFlatRows.map((row) => {
                         const statusTitle = row.task.current_status_id
                           ? resolveStatus(row.task.current_status_id)?.title ?? '—'
                           : null;
@@ -423,7 +424,12 @@ export default function TaskReportPage() {
                           .join(', ');
 
                         return (
-                          <TableRow key={row.task.id} hover>
+                          <TableRow
+                            key={row.task.id}
+                            hover
+                            sx={{ cursor: 'pointer' }}
+                            onClick={() => setDetailTask(row.task)}
+                          >
                             <TableCell>
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 {row.depth > 0 && (
@@ -483,6 +489,15 @@ export default function TaskReportPage() {
                 </Table>
               </TableContainer>
             </Paper>
+
+            <PublicTaskDetailModal
+              open={detailTask !== null}
+              task={detailTask}
+              allTasks={data.allTasks}
+              statuses={data.statuses}
+              users={data.users}
+              onClose={() => setDetailTask(null)}
+            />
           </>
         ) : null}
       </Container>

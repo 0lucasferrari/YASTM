@@ -22,6 +22,13 @@ async function request<T>(
     headers,
   });
 
+  // 401 Unauthorized — redirect to login
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    window.location.replace('/login');
+    throw new Error('Unauthorized');
+  }
+
   // 204 No Content
   if (res.status === 204) {
     return undefined as unknown as T;

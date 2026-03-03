@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -133,6 +133,7 @@ export default function TaskDetailModal({
   const [editPossibleStatusIds, setEditPossibleStatusIds] = useState<string[]>([]);
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
   const [editParentTaskId, setEditParentTaskId] = useState<string | null>(null);
+  const [editCurrentStatusId, setEditCurrentStatusId] = useState<string | null>(null);
   const [editPredictedFinishDate, setEditPredictedFinishDate] = useState<string>('');
 
   // Subtask creation
@@ -156,6 +157,9 @@ export default function TaskDetailModal({
   const [breadcrumb, setBreadcrumb] = useState<{ id: string; title: string }[]>([]);
 
   const subtaskCountMap = buildSubtaskCountMap(allTasks);
+
+  // Track which taskId we opened with — avoid resetting when allTasks refreshes (e.g. after clone)
+  const lastOpenedTaskIdRef = useRef<string | null>(null);
 
   // ─── Data loading ──────────────────────────────────────────────────────
 
@@ -182,17 +186,24 @@ export default function TaskDetailModal({
     }
   }, [t]);
 
-  // When modal opens or taskId changes, reset state
+  // When modal opens or taskId changes from parent, reset state.
+  // Skip when only allTasks refreshes (e.g. after clone) so we stay on the cloned task.
   useEffect(() => {
     if (open && taskId) {
-      setCurrentTaskId(taskId);
-      const t = allTasks.find((t) => t.id === taskId);
-      setBreadcrumb(t ? [{ id: t.id, title: t.title }] : []);
-      loadTaskData(taskId);
-      setMode('view');
-      setShowSubtaskForm(false);
-      setNewSubtaskTitle('');
-      setNewComment('');
+      const isNewOpen = lastOpenedTaskIdRef.current !== taskId;
+      if (isNewOpen) {
+        lastOpenedTaskIdRef.current = taskId;
+        setCurrentTaskId(taskId);
+        const t = allTasks.find((t) => t.id === taskId);
+        setBreadcrumb(t ? [{ id: t.id, title: t.title }] : []);
+        loadTaskData(taskId);
+        setMode('view');
+        setShowSubtaskForm(false);
+        setNewSubtaskTitle('');
+        setNewComment('');
+      }
+    } else {
+      lastOpenedTaskIdRef.current = null;
     }
   }, [open, taskId, loadTaskData, allTasks]);
 
@@ -205,6 +216,7 @@ export default function TaskDetailModal({
       setEditPossibleStatusIds(task.possible_status_ids ?? []);
       setEditAssigneeIds(task.assignee_ids ?? []);
       setEditParentTaskId(task.parent_task_id);
+      setEditCurrentStatusId(task.current_status_id ?? null);
       setEditPredictedFinishDate(
         task.predicted_finish_date
           ? new Date(task.predicted_finish_date).toISOString().slice(0, 10)
@@ -283,19 +295,7 @@ export default function TaskDetailModal({
   const handleSave = async () => {
     if (!currentTaskId || !task) return;
     try {
-      // 1) Save basic task fields (including parent_task_id)
-      const updated = await tasks.update(currentTaskId, {
-        title: editTitle,
-        description: editDescription || null,
-        priority: editPriority || null,
-        parent_task_id: editParentTaskId,
-        predicted_finish_date: editPredictedFinishDate
-          ? new Date(editPredictedFinishDate).toISOString()
-          : null,
-      });
-      setTask(updated);
-
-      // 2) Sync possible statuses — compute diff
+      // 1) Sync possible statuses first (so current_status_id can be validated)
       const currentStatusIds = task.possible_status_ids ?? [];
       const statusesToAdd = editPossibleStatusIds.filter((id) => !currentStatusIds.includes(id));
       const statusesToRemove = currentStatusIds.filter((id) => !editPossibleStatusIds.includes(id));
@@ -306,6 +306,19 @@ export default function TaskDetailModal({
       for (const statusId of statusesToRemove) {
         await tasks.removeStatus(currentTaskId, statusId);
       }
+
+      // 2) Save basic task fields (including parent_task_id and current_status_id)
+      const updated = await tasks.update(currentTaskId, {
+        title: editTitle,
+        description: editDescription || null,
+        priority: editPriority || null,
+        parent_task_id: editParentTaskId,
+        current_status_id: editCurrentStatusId,
+        predicted_finish_date: editPredictedFinishDate
+          ? new Date(editPredictedFinishDate).toISOString()
+          : null,
+      });
+      setTask(updated);
 
       // 3) Sync assignees — compute diff
       const currentAssigneeIds = task.assignee_ids ?? [];
@@ -319,18 +332,20 @@ export default function TaskDetailModal({
         await tasks.removeAssignee(currentTaskId, userId);
       }
 
-      // 4) Reload task data to reflect changes
+      // 4) Reload task data and refresh list
       await loadTaskData(currentTaskId);
       onTasksChanged();
 
-      // Update breadcrumb if title changed
-      if (editTitle !== task.title) {
-        setBreadcrumb((prev) =>
-          prev.map((crumb) =>
-            crumb.id === currentTaskId ? { ...crumb, title: editTitle } : crumb,
-          ),
-        );
+      // 5) Rebuild breadcrumb to keep user on current task (handles parent/title changes)
+      const path: { id: string; title: string }[] = [{ id: currentTaskId, title: editTitle }];
+      let pid: string | null = editParentTaskId;
+      while (pid) {
+        const p = allTasks.find((x) => x.id === pid);
+        if (!p) break;
+        path.unshift({ id: p.id, title: p.title });
+        pid = p.parent_task_id;
       }
+      setBreadcrumb(path);
 
       setMode('view');
     } catch (err) {
@@ -351,7 +366,15 @@ export default function TaskDetailModal({
       }
       onTasksChanged();
       setCloneDialogOpen(false);
-      onClose();
+      if (asSubtask) {
+        // Navigate to the new cloned task and open in edit mode
+        setCurrentTaskId(cloned.id);
+        setBreadcrumb((prev) => [...prev, { id: cloned.id, title: cloned.title }]);
+        await loadTaskData(cloned.id);
+        setMode('edit');
+      } else {
+        onClose();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('taskDetail.cloneFailed'));
       setCloneDialogOpen(false);
@@ -715,14 +738,14 @@ export default function TaskDetailModal({
                       ))}
                     </TextField>
 
-                    {/* Current Status (only from possible statuses) */}
+                    {/* Current Status (only from possible statuses) — local state, saved on Save */}
                     <TextField
                       label={t('taskDetail.currentStatus')}
                       select
                       fullWidth
                       size="small"
-                      value={task.current_status_id ?? ''}
-                      onChange={(e) => handleStatusChange(e.target.value)}
+                      value={editCurrentStatusId ?? ''}
+                      onChange={(e) => setEditCurrentStatusId(e.target.value || null)}
                       sx={{ mb: 2 }}
                     >
                       <MenuItem value="">
